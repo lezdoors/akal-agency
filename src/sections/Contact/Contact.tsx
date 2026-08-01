@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MarkFrame } from "../../components/Marks/Marks";
 import "./Contact.css";
 
 export interface ContactProps {
@@ -44,7 +45,7 @@ export function Contact({ kicker, title, body }: ContactProps) {
           <p className="akal-contact__body">{body}</p>
         </div>
 
-        <div className="akal-contact__panel">
+        <MarkFrame className="akal-contact__panel">
           {status === "sent" ? (
             <div className="akal-contact__done" role="status">
               <span className="akal-contact__done-mark">✓</span>
@@ -95,7 +96,7 @@ export function Contact({ kicker, title, body }: ContactProps) {
               </button>
             </form>
           )}
-        </div>
+        </MarkFrame>
       </div>
     </section>
   );

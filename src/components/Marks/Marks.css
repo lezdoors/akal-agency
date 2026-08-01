@@ -1,0 +1,48 @@
+/* The print-system crop frame + registration cross, shared across sections. */
+
+.marks {
+  position: relative;
+}
+
+.marks__crop {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 0 solid currentColor;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.marks__crop--tl {
+  top: 0;
+  left: 0;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+.marks__crop--tr {
+  top: 0;
+  right: 0;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+.marks__crop--bl {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+.marks__crop--br {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+
+.marks__reg {
+  width: 26px;
+  height: 26px;
+  stroke: currentColor;
+  fill: none;
+  opacity: 0.6;
+  pointer-events: none;
+}

@@ -38,6 +38,7 @@ export const site = {
   brand: "AKAL",
 
   nav: [
+    { label: "About", href: "#about" },
     { label: "Craft", href: "#craft" },
     { label: "Plates", href: "#plates" },
     { label: "Manifesto", href: "#manifesto" },
@@ -45,6 +46,17 @@ export const site = {
     { label: "Who it's for", href: "#who" },
     { label: "Contact", href: "#contact" },
   ] as NavLink[],
+
+  about: {
+    kicker: "// About — the studio",
+    title: ["Old process.", "Modern output."],
+    body: "AKAL is a collective of designers, writers, filmmakers and builders running one accountable team across websites, creative, paid media and optimisation. We treat every brand as two things at once: something with history worth keeping, and something that needs to move. So the work is built the same way — antique care on the craft, brutal clarity on the system.",
+    plate: {
+      img: "https://d8j0ntlcm91z4.cloudfront.net/user_3CsXJ5KGzuB3zpzVHAcuSGHKbW9/hf_20260801_220402_70e916db-8631-4c51-8eb7-0c77ebde5353.png",
+      fig: "FIG. 00 — THE STUDIO",
+      spec: "Ink / Sepia 00 · Charcoal 00 | Paper / Cotton rag, 100% | Press / AKAL",
+    },
+  },
 
   heroScenes: [
     {

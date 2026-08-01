@@ -4,9 +4,12 @@
   padding: clamp(6rem, 10vh, 9rem) clamp(1.25rem, 5vw, 5rem);
 }
 
-.akal-reel__head {
+.akal-reel__frame {
+  position: relative;
+  color: var(--akal-ink);
   max-width: 60rem;
   margin: 0 auto 2.5rem;
+  padding: 1rem;
 }
 
 .akal-reel__kicker {

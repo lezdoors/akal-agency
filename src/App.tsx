@@ -1,6 +1,7 @@
 import site from "./config/site";
 import { Nav } from "./sections/Nav/Nav";
 import { Hero } from "./sections/Hero/Hero";
+import { About } from "./sections/About/About";
 import { Reel } from "./sections/Reel/Reel";
 import { PlateIndex } from "./sections/PlateIndex/PlateIndex";
 import { Manifesto } from "./sections/Manifesto/Manifesto";
@@ -29,6 +30,16 @@ export default function App() {
       />
 
       <Hero scenes={site.heroScenes} theme={site.heroTheme} />
+
+      <About
+        kicker={site.about.kicker}
+        title={site.about.title}
+        body={site.about.body}
+        plate={site.about.plate}
+      />
+
+      <ShapeCarry />
+
       <Reel
         kicker={site.reel.kicker}
         title={site.reel.title}

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useInView } from "../../hooks/useInView";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { MarkFrame } from "../../components/Marks/Marks";
 import type { LandscapeMedia } from "../../config/site";
 import "./Reel.css";
 
@@ -84,11 +85,11 @@ export function Reel({ kicker, title, hint, media }: ReelProps) {
 
   return (
     <section id="craft" className="akal-reel" ref={ref}>
-      <div className="akal-reel__head">
+      <MarkFrame className="akal-reel__frame">
         <p className="akal-reel__kicker">{kicker}</p>
         <h2 className="akal-reel__title">{title}</h2>
         <p className="akal-reel__hint">{hint}</p>
-      </div>
+      </MarkFrame>
 
       <div
         ref={filmRef}

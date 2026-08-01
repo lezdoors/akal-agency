@@ -4,8 +4,14 @@
   padding: clamp(6rem, 12vh, 10rem) clamp(1.25rem, 5vw, 5rem);
 }
 
-.akal-process__heading {
+.akal-process__frame {
+  color: var(--akal-paper-ink);
+  max-width: 42rem;
   margin: 0 0 clamp(3rem, 7vh, 5rem);
+}
+
+.akal-process__heading {
+  margin: 1.4rem;
   font-size: clamp(2rem, 4.5vw, 4rem);
   line-height: 0.98;
   letter-spacing: -0.04em;
