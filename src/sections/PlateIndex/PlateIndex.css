@@ -1,0 +1,280 @@
+/* THE PLATE INDEX — cream paper ground, hard OLD/MODERN collision. */
+
+.plates {
+  position: relative;
+  background: var(--akal-paper);
+  color: var(--akal-paper-ink);
+  padding: clamp(6rem, 12vh, 10rem) clamp(1.25rem, 5vw, 5rem)
+    clamp(4rem, 8vh, 6rem);
+  overflow: clip;
+}
+
+/* aged-paper grain on the antique ground (decoration only) */
+.plates::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.plates__fringe {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: clamp(1.25rem, 5vw, 5rem);
+  width: 1px;
+  background: var(--akal-paper-ink);
+  opacity: 0.14;
+}
+
+.plates__head {
+  position: relative;
+  max-width: 66rem;
+  margin: 0 auto 5rem;
+  padding-left: clamp(1.5rem, 4vw, 4rem);
+}
+
+.plates__head-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2.2rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--akal-paper-ink);
+}
+
+.plates__title {
+  margin: 0;
+  font-size: clamp(3.2rem, 11vw, 10rem);
+  line-height: 0.86;
+  letter-spacing: -0.05em;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.plates__line {
+  display: block;
+}
+
+.plates__colophon {
+  margin: 2.2rem 0 0;
+  color: var(--akal-paper-muted);
+}
+
+/* figures */
+.plate-figs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: clamp(4rem, 10vh, 8rem);
+  position: relative;
+}
+
+.plate-fig {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1.5rem, 5vw, 5rem);
+}
+
+/* stagger via transform (not layout) so the catalogue doesn't sit in a row */
+.plate-fig--b {
+  padding-top: clamp(2rem, 6vw, 5rem);
+}
+
+.plate-fig__stage {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: end;
+  min-width: 0;
+  opacity: 0.001;
+  transform: translateY(18px);
+  transition:
+    opacity 0.9s var(--ease-out),
+    transform 0.9s var(--ease-out);
+}
+
+.plate-fig--open .plate-fig__stage {
+  opacity: 1;
+  transform: none;
+}
+
+/* the antique plate — kept exactly as antique as it is */
+.plate-fig__plate {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #e9e3d4;
+}
+
+.plate-fig__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* crop marks */
+.plate-crops {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.plate-crops__tick {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border: 0 solid var(--akal-paper-ink);
+  opacity: 0.85;
+}
+
+.plate-crops__tick--tl {
+  top: 6px;
+  left: 6px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+.plate-crops__tick--tr {
+  top: 6px;
+  right: 6px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+.plate-crops__tick--bl {
+  bottom: 6px;
+  left: 6px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+.plate-crops__tick--br {
+  bottom: 6px;
+  right: 6px;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+
+/* registration cross */
+.plate-reg {
+  width: 30px;
+  height: 30px;
+  stroke: var(--akal-paper-ink);
+  fill: none;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.plate-fig__reg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* plate number + lime tag (lime as FILL under ink type — allowed on light) */
+.plate-fig__plate-no {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  padding: 0.55rem 0.75rem;
+  background: var(--akal-paper-ink);
+  color: var(--akal-paper);
+  font-weight: 600;
+}
+
+.plate-fig__tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 0.45rem 0.65rem;
+  background: var(--akal-accent);
+  color: var(--akal-paper-ink);
+  font-weight: 800;
+}
+
+/* the brutalist spec column */
+.plate-fig__spec {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 11rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--akal-paper-ink);
+  color: var(--akal-paper-ink);
+}
+
+.plate-fig__spec-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+  font-weight: 700;
+}
+
+.plate-fig__spec-head em {
+  font-style: normal;
+  color: var(--akal-paper-muted);
+}
+
+.plate-fig__spec-line {
+  color: var(--akal-paper-muted);
+}
+
+/* the modern word set beside each plate */
+.plate-fig__word {
+  max-width: 20rem;
+  padding-left: clamp(0.5rem, 2vw, 2rem);
+  opacity: 0.001;
+  transform: translateY(10px);
+  transition:
+    opacity 0.7s var(--ease-out) 0.12s,
+    transform 0.7s var(--ease-out) 0.12s;
+}
+
+.plate-fig--open .plate-fig__word {
+  opacity: 1;
+  transform: none;
+}
+
+.plate-fig__title {
+  margin: 0 0 0.9rem;
+  font-size: clamp(3rem, 7vw, 5rem);
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.plate-fig__copy {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--akal-paper-body);
+}
+
+/* folio footer */
+.plates__foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: clamp(4rem, 8vh, 6rem);
+  padding-top: 1rem;
+  border-top: 1px solid var(--akal-paper-ink);
+  color: var(--akal-paper-muted);
+}
+
+@media (max-width: 900px) {
+  .plate-fig {
+    grid-template-columns: 1fr;
+  }
+  .plate-fig__word {
+    padding-left: 0;
+    max-width: 24rem;
+  }
+  .plate-fig--b {
+    padding-top: 0;
+  }
+}

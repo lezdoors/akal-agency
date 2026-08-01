@@ -1,7 +1,5 @@
 {
-  "framework": "tanstack-start",
-  "rootDirectory": "app",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "npm install"
+  "buildCommand": "bun run build",
+  "installCommand": "bun install",
+  "outputDirectory": "dist"
 }

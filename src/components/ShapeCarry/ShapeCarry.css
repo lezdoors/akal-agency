@@ -1,0 +1,30 @@
+/* Band carrying the hero's ink arc across a paper→dark boundary. */
+.akal-shapecarry {
+  position: relative;
+  height: 120vh;
+  background: var(--akal-paper);
+  overflow: clip;
+}
+
+.akal-shapecarry__arc {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: clamp(6rem, 14vw, 15rem);
+  height: auto;
+  will-change: transform, opacity;
+  overflow: visible;
+}
+
+.akal-shapecarry__arc path {
+  stroke-linecap: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .akal-shapecarry {
+    height: 12vh;
+  }
+  .akal-shapecarry__arc {
+    display: none;
+  }
+}

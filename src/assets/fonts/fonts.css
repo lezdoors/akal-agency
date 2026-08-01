@@ -1,0 +1,43 @@
+/* Self-hosted brand fonts. No external font host at runtime.
+   Cabinet Grotesk = Fontshare (NOT served by Google — this was the 404).
+   Inter Tight = variable family covering weights 400-700. */
+
+@font-face {
+  font-family: "Cabinet Grotesk";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./cabinet-grotesk-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cabinet Grotesk";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./cabinet-grotesk-500.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cabinet Grotesk";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./cabinet-grotesk-700.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cabinet Grotesk";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./cabinet-grotesk-800.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter Tight";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./inter-tight.woff2") format("woff2");
+}
