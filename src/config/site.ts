@@ -39,7 +39,7 @@ export const site = {
 
   nav: [
     { label: "Craft", href: "#craft" },
-    { label: "Capabilities", href: "#capabilities" },
+    { label: "Plates", href: "#plates" },
     { label: "Manifesto", href: "#manifesto" },
     { label: "Process", href: "#process" },
     { label: "Who it's for", href: "#who" },
