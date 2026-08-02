@@ -5,10 +5,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ------------------------------------------------------------------ *
- * AKAL — cold-luxury ice on instrument-dark. One accent, all dark.
- * The interface stays matte; the procedural world emits light.
- * ------------------------------------------------------------------ */
 :root {
   --ground: #0a0c10;
   --panel: #12151b;
@@ -16,7 +12,6 @@
   --ink: #eff2f6;
   --muted: #98a2b0;
   --accent: #7fa7c4;
-
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --nav-h: 4.5rem;
 }
@@ -27,12 +22,11 @@
   *::after {
     box-sizing: border-box;
   }
-
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    background: var(--ground);
   }
-
   body {
     margin: 0;
     background: var(--ground);
@@ -44,7 +38,6 @@
     text-rendering: optimizeLegibility;
     overflow-x: clip;
   }
-
   h1,
   h2,
   h3,
@@ -53,18 +46,25 @@
     font-weight: 600;
     letter-spacing: -0.03em;
     color: var(--ink);
+    text-wrap: balance;
   }
-
   a {
     color: inherit;
     text-decoration: none;
   }
-
   button {
     font: inherit;
     cursor: pointer;
+    background: none;
+    border: none;
+    color: inherit;
   }
-
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
   ::selection {
     background: var(--accent);
     color: var(--ground);
@@ -81,13 +81,10 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
-  .tabular {
-    font-variant-numeric: tabular-nums;
-  }
 }
 
 /* ------------------------------------------------------------------ *
- * The living world — one fixed canvas behind the chapters.
+ * The world stage (fixed) + the film track (scroll) over it.
  * ------------------------------------------------------------------ */
 .globe-stage {
   position: fixed;
@@ -95,28 +92,42 @@
   z-index: 0;
   pointer-events: auto;
 }
+.globe-stage.no-webgl,
+.globe-stage.webgl-missing {
+  background: #0a0c10 url("/brand/og-cover.jpg") center / cover no-repeat;
+}
 
-/* Scrim: keeps type legible over the luminous world without hiding it. */
+/* Scrim keeps type legible over the world without hiding it. */
 .globe-stage::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(10, 12, 16, 0.7) 100%),
-    linear-gradient(180deg, rgba(10, 12, 16, 0.8) 0%, rgba(10, 12, 16, 0.35) 30%, transparent 45%, transparent 60%, rgba(10, 12, 16, 0.9) 100%);
+    radial-gradient(120% 90% at 50% 42%, transparent 52%, rgba(10, 12, 16, 0.8) 100%),
+    linear-gradient(180deg, rgba(10, 12, 16, 0.75) 0%, rgba(10, 12, 16, 0.2) 28%, transparent 46%, transparent 58%, rgba(10, 12, 16, 0.85) 100%);
 }
 
-/* ------------------------------------------------------------------ *
- * Layout over the world.
- * ------------------------------------------------------------------ */
-.stage-content {
+/* The film track: a tall scroll surface; copy anchors to scene beats. */
+.film-track {
   position: relative;
   z-index: 1;
+  pointer-events: none;
+}
+.scene-text {
+  pointer-events: none;
+  will-change: opacity;
+}
+.scene-text form,
+.scene-text input,
+.scene-text select,
+.scene-text textarea,
+.scene-text button {
+  pointer-events: auto;
 }
 
 /* ------------------------------------------------------------------ *
- * Global reduced-motion: render every final state immediately.
+ * Reduced motion: static final states, no transitions.
  * ------------------------------------------------------------------ */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -129,8 +140,7 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-  [data-reveal-state] {
+  .scene-text {
     opacity: 1 !important;
-    transform: none !important;
   }
 }

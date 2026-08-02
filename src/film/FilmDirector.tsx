@@ -1,73 +1,77 @@
-import { useEffect, useMemo, useRef } from "react";
-import * as THREE from "three";
+import { useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { CameraDirector } from "@/film/Director";
+import * as THREE from "three";
+import { CameraDirector, ShotKey } from "@/film/Director";
 import { worldState } from "@/film/state";
-import { clamp01 } from "@/lib/math";
+import { smoothstep } from "@/lib/math";
 import { TimeSystem } from "@/systems/time/TimeSystem";
 import { reducedMotion } from "@/session";
+
+/** One continuous camera path through the whole film (scroll = time). */
+const FILM_SHOTS: ShotKey[] = [
+  { at: 0.0, pos: [0, 1.15, 9.6], aim: [0, 0, 0], fov: 40 },
+  { at: 0.12, pos: [0, 0.6, 8.0], aim: [0, 0, 0], fov: 45 },
+  { at: 0.2, pos: [2.4, 0.5, 7.0], aim: [0, 0, 0], fov: 46 },
+  { at: 0.3, pos: [1.8, 0.3, 5.4], aim: [0.2, 0, 0], fov: 50 },
+  { at: 0.36, pos: [1.0, 0.1, 4.4], aim: [0.45, 0.05, -0.2], fov: 54 },
+  { at: 0.44, pos: [0.35, 0.0, 2.6], aim: [0.55, 0.05, -0.5], fov: 64 },
+  { at: 0.52, pos: [0.0, 0.0, -4.6], aim: [0, 0, 0], fov: 86 },
+  { at: 0.64, pos: [0, 0.9, -5.4], aim: [0, 0.2, 0], fov: 62 },
+  { at: 0.76, pos: [1.5, 0.4, -4.6], aim: [0.6, 0.1, 0], fov: 55 },
+  { at: 0.86, pos: [0, 0.0, -5.0], aim: [0, 0, 0], fov: 62 },
+  { at: 1.0, pos: [0, 0.15, 3.0], aim: [0, 0, 0], fov: 54 },
+];
 
 interface FilmDirectorProps {
   time: TimeSystem;
 }
 
 /**
- * Scene 1 — The World.
+ * Drives the entire film from scroll progress. The camera follows the one
+ * continuous path (carrying the visitor); each scene's world state derives
+ * from the same progress so the globe boots, routes appear, the Portal dives
+ * through, the interior reveals, the hidden layer peels, and everything
+ * collapses to the Single Route.
  *
- * The visitor enters a world assembling itself: the field densifies from a
- * haze into the full globe (the boot), the camera holds a gentle BREATHE that
- * settles into an extended STILL as the headline completes, and one faint arc
- * traces as a promise. The boot tracks scroll bidirectionally — reverse scroll
- * rewinds it (the world un-unassembles), release reassembles it — so it proves
- * the world is procedural, never a rendered still.
- *
- * Under reduced motion, the world resolves to its final, static state.
+ * Under reduced motion the camera still cuts between the film's still
+ * compositions on scroll, but the world stays static (no routes, portal,
+ * interior, or collapse) — the story is preserved as frames, not motion.
  */
 export function FilmDirector({ time }: FilmDirectorProps) {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
-  const director = useMemo(() => new CameraDirector(camera), [camera]);
-
-  const boot = useRef(reducedMotion ? 1 : 0);
-  const lastProgress = useRef(time.progress);
-
-  useEffect(() => {
-    director.setShot({
-      mode: reducedMotion ? "still" : "breathe",
-      base: [0, 0.6, 7.4],
-      aim: [0, 0, 0],
-      breathe: reducedMotion ? 0 : 0.35,
-    });
-    worldState.boot = reducedMotion ? 1 : 0;
-    boot.current = reducedMotion ? 1 : 0;
-  }, [director]);
+  const director = useMemo(() => new CameraDirector(camera).setTimeline(FILM_SHOTS), [camera]);
 
   useFrame((_s, rawDt) => {
     const dt = Math.min(rawDt, 0.05);
 
     if (reducedMotion) {
+      director.seek(time.progress);
       worldState.boot = 1;
-      director.update(dt, time);
+      worldState.routes = 0;
+      worldState.portal = 0;
+      worldState.interior = 0;
+      worldState.hidden = 0;
+      worldState.collapse = 0;
+      worldState.survivorIndex = -1;
+      worldState.film = time.progress;
+      time.tick(dt);
       return;
     }
 
-    // Scroll direction drives the boot: forward assembles, reverse rewinds.
-    const pd = time.progress - lastProgress.current;
-    lastProgress.current = time.progress;
-    const rewinding = pd < -0.0005;
+    const p = time.progress;
+    director.seek(p);
+    time.tick(dt);
+    worldState.film = p;
 
-    boot.current = clamp01(boot.current + dt * (rewinding ? -1.3 : 0.45));
-    if (boot.current >= 1) boot.current = 1; // hold at full
-    worldState.boot = boot.current;
-
-    // BREATHE while booting; settle to STILL as the world completes.
-    const settle = 1 - Math.min(1, boot.current * 1.15);
-    director.setShot({
-      mode: "breathe",
-      base: [0, 0.6, 7.4],
-      aim: [0, 0, 0],
-      breathe: 0.35 * settle,
-    });
-    director.update(dt, time);
+    worldState.boot = smoothstep(0.0, 0.13, p);
+    worldState.routes = smoothstep(0.16, 0.3, p);
+    worldState.portal = smoothstep(0.46, 0.58, p);
+    worldState.interior = smoothstep(0.5, 0.62, p);
+    worldState.hidden = smoothstep(0.73, 0.82, p);
+    worldState.collapse = smoothstep(0.84, 0.92, p);
+    if (worldState.collapse > 0 && worldState.survivorIndex < 0) {
+      worldState.survivorIndex = 0;
+    }
   });
 
   return null;

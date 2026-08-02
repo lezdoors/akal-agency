@@ -1,13 +1,10 @@
 /**
- * QualifyController — the state machine for the Phase 2 interaction.
+ * QualifyController — the state machine for qualification interaction.
  *
- * One visitor steers a cursor over the field; dwelling on a lead builds the
+ * The visitor steers a cursor over the field; dwelling on a lead builds the
  * qualification charge; at full charge the lead is LOCKED and forks into the
- * Chord of Futures; it resolves to one survivor route. Scroll direction drives
- * the chord's travel (forward plays it, reverse scroll rewinds it cleanly).
- *
- * States: idle → charging → locked → resolved → (release).
- * The world stays alive between visits via a seeded idle cadence.
+ * Chord of Futures, resolving to one survivor route. `lock()` lets the film
+ * force a qualification at its Instrument beat so the mechanic is always seen.
  */
 import { clamp01 } from "@/lib/math";
 import { Charge } from "@/systems/weight/WeightLayer";
@@ -15,10 +12,9 @@ import { SeedSystem } from "@/systems/seed/SeedSystem";
 
 export type QState = "idle" | "charging" | "locked" | "resolved";
 
-/** Chord duration when playing a lock. */
-const CHORD_RATE = 0.9; // travel units per second
+const CHORD_RATE = 0.9;
 const RESOLVE_AT = 0.72;
-const RESET_HOLD = 1.4; // seconds the resolved survivor stays before release
+const RESET_HOLD = 1.4;
 
 export class QualifyController {
   state: QState = "idle";
@@ -36,13 +32,17 @@ export class QualifyController {
 
   constructor(rootSeed: number) {
     this.seed = new SeedSystem(rootSeed);
-    // Seeded idle cadence (5–9s), stable for this session.
     this.cadence = 5 + this.seed.value("qualify.cadence", 0, 4);
   }
 
-  /** 0..1 charge fill, for the feedback ring. */
   charge01(): number {
     return this.charge.normalized();
+  }
+
+  /** Force a qualification for the film's Instrument beat (visual guarantee). */
+  lock(index: number): void {
+    if (index < 0) return;
+    if (this.state === "idle" || this.state === "charging") this.beginLock(index);
   }
 
   private beginLock(index: number): void {
@@ -61,21 +61,10 @@ export class QualifyController {
     this.travel = 0;
     this.resolved = false;
     this.charge.reset();
-    this.idleTime = 0; // breathe before the next idle cadence
+    this.idleTime = 0;
   }
 
-  /** Called every frame. `dwelling` + `targetIndex` come from the cursor field. */
-  tick(
-    dt: number,
-    opts: {
-      dwelling: boolean;
-      targetIndex: number;
-      /** + when scrolling down, − when scrolling up. */
-      progressDelta: number;
-      /** Light idle auto-qualification cadence (tier-gated upstream). */
-      autoAdvance: boolean;
-    }
-  ): void {
+  tick(dt: number, opts: { dwelling: boolean; targetIndex: number; progressDelta: number; autoAdvance: boolean }): void {
     if (dt <= 0) return;
     const { dwelling, targetIndex, progressDelta, autoAdvance } = opts;
 
@@ -94,13 +83,8 @@ export class QualifyController {
       }
       case "charging": {
         if (dwelling && targetIndex >= 0) {
-          this.charge.value = Math.min(
-            this.charge.threshold,
-            this.charge.value + this.charge.rate * dt
-          );
-          if (this.charge.value >= this.charge.threshold) {
-            this.beginLock(targetIndex);
-          }
+          this.charge.value = Math.min(this.charge.threshold, this.charge.value + this.charge.rate * dt);
+          if (this.charge.value >= this.charge.threshold) this.beginLock(targetIndex);
         } else {
           this.charge.value = Math.max(0, this.charge.value - dt * 0.9);
           if (this.charge.value <= 0) this.state = "idle";

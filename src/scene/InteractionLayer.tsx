@@ -5,25 +5,19 @@ import { ChordLayer } from "@/scene/ChordLayer";
 import type { ChordClock } from "@/scene/ChordLayer";
 import { SeedSystem } from "@/systems/seed/SeedSystem";
 import { QualifyController } from "@/systems/qualify/QualifyController";
-import { CameraSystem } from "@/systems/camera/CameraSystem";
 import type { PerfTier } from "@/systems/renderer/RendererInterface";
 import { TimeSystem } from "@/systems/time/TimeSystem";
 import { Vec3Spring } from "@/systems/weight/WeightLayer";
 import { PointerState } from "@/lib/pointerState";
 import { spherePoints } from "@/lib/geometry";
 import { RGB } from "@/lib/palette";
+import { worldState } from "@/film/state";
 
 const RADIUS = 1.9;
 const DWELL_DIST = 0.62;
-const DWELL_SPEED = 150; // px/s below which a stationary cursor counts as dwelling
+const DWELL_SPEED = 150;
 
-const TARGET_COUNT: Record<PerfTier, number> = {
-  high: 10,
-  mid: 10,
-  low: 5,
-  reduced: 0,
-};
-
+const TARGET_COUNT: Record<PerfTier, number> = { high: 10, mid: 10, low: 5, reduced: 0 };
 const ACCENT = new THREE.Color(RGB.accent[0] / 255, RGB.accent[1] / 255, RGB.accent[2] / 255);
 
 interface InteractionLayerProps {
@@ -31,21 +25,14 @@ interface InteractionLayerProps {
   rootSeed: number;
   tier: PerfTier;
   reduced: boolean;
-  /**
-   * Scene 1 is a handhold only: once enabled (the Instrument scene), the
-   * dwell-charge / lock / Chord / camera-lean pipeline engages.
-   */
   enableQualification: boolean;
 }
 
 /**
- * Phase 2 interaction over the globe:
- *  - CursorField: a sprung reticle tracks the pointer on the sphere surface.
- *  - Dwell-charge: holding it still over a lead fills the qualification ring.
- *  - Lock: at full charge the reticle springs onto the lead.
- *  - Chord of Futures + sprung reroute: the lead forks, resolves to a survivor.
- *  - CameraSystem: the camera leans in on the lock like heavy physical mass.
- * Everything mutates refs inside useFrame; React only re-renders on a lock.
+ * Qualification interaction (Instrument scene). The camera is owned by the
+ * director; this layer only handles the reticle, dwell-charge, lock and Chord.
+ * It also guarantees the qualification plays at the Instrument beat so the
+ * route/deliver language is always shown, even for a passive visitor.
  */
 export function InteractionLayer({
   time,
@@ -55,7 +42,6 @@ export function InteractionLayer({
   enableQualification,
 }: InteractionLayerProps) {
   const { camera } = useThree();
-
   const nLeads = TARGET_COUNT[tier];
   const interactive = !reduced && nLeads > 0;
 
@@ -64,15 +50,16 @@ export function InteractionLayer({
     if (nLeads === 0) return [] as THREE.Vector3[];
     const flat = spherePoints(nLeads, RADIUS, seed.stream("leads"));
     const out: THREE.Vector3[] = [];
-    for (let i = 0; i < nLeads; i++) {
-      out.push(new THREE.Vector3(flat[i * 3], flat[i * 3 + 1], flat[i * 3 + 2]));
-    }
+    for (let i = 0; i < nLeads; i++) out.push(new THREE.Vector3(flat[i * 3], flat[i * 3 + 1], flat[i * 3 + 2]));
     return out;
   }, [nLeads, seed]);
 
   const controller = useMemo(() => new QualifyController(rootSeed), [rootSeed]);
-  const cameraRig = useMemo(() => new CameraSystem([0, 0, 6.2]), []);
   const reticleSpring = useMemo(() => new Vec3Spring([0, 0, RADIUS], "reticle"), []);
+  const autoLocked = useRef(false);
+  const chordClock = useRef<ChordClock>({ survivor: 0, travel: 0, resolved: false });
+  const prevState = useRef<string>("idle");
+  const lastProgress = useRef(0);
 
   const reticleRef = useRef<THREE.Group>(null);
   const chargeRef = useRef<THREE.Mesh>(null);
@@ -80,9 +67,6 @@ export function InteractionLayer({
   const leadMeshes = useRef<(THREE.Mesh | null)[]>([]);
 
   const [anchor, setAnchor] = useState<THREE.Vector3 | null>(null);
-  const chordClock = useRef<ChordClock>({ survivor: 0, travel: 0, resolved: false });
-  const prevState = useRef<string>("idle");
-  const lastProgress = useRef(0);
 
   const ray = useMemo(() => new THREE.Raycaster(), []);
   const sphere = useMemo(() => new THREE.Sphere(new THREE.Vector3(0, 0, 0), RADIUS), []);
@@ -93,14 +77,12 @@ export function InteractionLayer({
 
   useEffect(() => {
     reticleSpring.snap([0, 0, RADIUS]);
-    cameraRig.snapTo([0, 0, 6.2]);
-  }, [reticleSpring, cameraRig]);
+  }, [reticleSpring]);
 
   useFrame((_s, rawDt) => {
     if (!interactive) return;
     const dt = Math.min(rawDt, 0.05);
 
-    // World-space point on the sphere under the pointer.
     ndc.set(PointerState.nx, PointerState.ny);
     ray.setFromCamera(ndc, camera);
     if (ray.ray.intersectSphere(sphere, hit)) surface.copy(hit);
@@ -110,7 +92,6 @@ export function InteractionLayer({
       else surface.set(0, 0, RADIUS);
     }
 
-    // Scene 1: handhold only — the reticle follows; no qualification yet.
     if (!enableQualification) {
       reticleSpring.setTarget([surface.x, surface.y, surface.z]);
       const rp = reticleSpring.step(dt);
@@ -118,12 +99,8 @@ export function InteractionLayer({
         reticleRef.current.position.set(rp[0], rp[1], rp[2]);
         reticleRef.current.lookAt(camera.position);
       }
-      if (chargeRef.current) {
-        (chargeRef.current.material as THREE.MeshBasicMaterial).opacity = 0;
-      }
-      if (dotRef.current) {
-        (dotRef.current.material as THREE.MeshBasicMaterial).opacity = 0.7;
-      }
+      if (chargeRef.current) (chargeRef.current.material as THREE.MeshBasicMaterial).opacity = 0;
+      if (dotRef.current) (dotRef.current.material as THREE.MeshBasicMaterial).opacity = 0.7;
       return;
     }
 
@@ -138,13 +115,17 @@ export function InteractionLayer({
       }
     }
     const speed = Math.hypot(PointerState.vx, PointerState.vy);
-    const dwelling =
-      PointerState.active && speed < DWELL_SPEED && nearest >= 0 && nearestDist < DWELL_DIST;
+    const dwelling = PointerState.active && speed < DWELL_SPEED && nearest >= 0 && nearestDist < DWELL_DIST;
 
-    // Scroll direction → chord travel (reverse scroll rewinds).
     const progressDelta = time.progress - lastProgress.current;
     lastProgress.current = time.progress;
     const dir = progressDelta < -0.0005 ? -1 : 1;
+
+    // Guarantee the qualification is shown at the Instrument beat.
+    if (!autoLocked.current && worldState.film >= 0.335 && worldState.film <= 0.47) {
+      autoLocked.current = true;
+      controller.lock(0);
+    }
 
     const autoCandidate = Math.max(0, Math.floor(time.world * 0.5) % Math.max(1, nLeads));
     controller.tick(dt, {
@@ -155,26 +136,19 @@ export function InteractionLayer({
     });
 
     const s = controller.state;
-    // Anchor the chord on lock; release it back to idle.
     if (s === "locked" || s === "resolved") {
       if (prevState.current !== s) {
         const lp = leads[controller.lockedIndex] ?? null;
         setAnchor(lp);
-        chordClock.current = {
-          survivor: controller.survivorIndex,
-          travel: controller.travel,
-          resolved: controller.resolved,
-        };
+        chordClock.current = { survivor: controller.survivorIndex, travel: controller.travel, resolved: controller.resolved };
       }
       chordClock.current.travel = controller.travel;
       chordClock.current.resolved = controller.resolved;
     } else if (prevState.current === "locked" || prevState.current === "resolved") {
       setAnchor(null);
-      cameraRig.reset();
     }
     prevState.current = s;
 
-    // Reticle follows pointer (or springs onto the locked lead).
     const locked = s === "locked" || s === "resolved";
     const rt: [number, number, number] = locked
       ? (() => {
@@ -189,19 +163,14 @@ export function InteractionLayer({
       reticleRef.current.lookAt(camera.position);
     }
 
-    // Qualification ring.
     const charge = controller.charge01();
     if (chargeRef.current) {
-      const mat = chargeRef.current.material as THREE.MeshBasicMaterial;
       const c = locked ? 0 : Math.max(0.05, charge);
       chargeRef.current.scale.setScalar(c);
-      mat.opacity = locked ? Math.max(0, 1 - controller.travel) : 0.2 + 0.55 * c;
+      (chargeRef.current.material as THREE.MeshBasicMaterial).opacity = locked ? 0 : 0.2 + 0.55 * c;
     }
-    if (dotRef.current) {
-      (dotRef.current.material as THREE.MeshBasicMaterial).opacity = locked ? 1 : 0.7;
-    }
+    if (dotRef.current) (dotRef.current.material as THREE.MeshBasicMaterial).opacity = locked ? 1 : 0.7;
 
-    // Lead highlight.
     for (let i = 0; i < leadMeshes.current.length; i++) {
       const m = leadMeshes.current[i];
       if (!m) continue;
@@ -212,50 +181,26 @@ export function InteractionLayer({
       m.scale.y = m.scale.x;
       m.scale.z = m.scale.x;
     }
-
-    // Sprung camera lean.
-    let ct: [number, number, number] = [0, 0, 6.2];
-    if (locked) {
-      const lp = leads[controller.lockedIndex] ?? null;
-      if (lp) ct = [lp.x * 0.22, lp.y * 0.22, 6.2 - lp.z * 0.16];
-      cameraRig.lookAt(origin);
-    } else {
-      cameraRig.reset();
-    }
-    cameraRig.target(ct);
-    const cp = cameraRig.step(dt);
-    camera.position.set(cp[0], cp[1], cp[2]);
-    camera.lookAt(cameraRig.getLook());
   });
 
-  if (!interactive) {
-    return null;
-  }
+  if (!interactive) return null;
 
   return (
     <>
       <ChordLayer anchor={anchor} clock={chordClock} />
-
       {leads.map((lead, i) => (
-        <mesh
-          key={i}
-          ref={(el) => {
-            leadMeshes.current[i] = el;
-          }}
-          position={[lead.x, lead.y, lead.z]}
-        >
+        <mesh key={i} ref={(el) => { leadMeshes.current[i] = el; }} position={[lead.x, lead.y, lead.z]}>
           <sphereGeometry args={[0.05, 12, 12]} />
           <meshBasicMaterial color={ACCENT} transparent opacity={0.6} />
         </mesh>
       ))}
-
       <group ref={reticleRef}>
         <mesh>
-          <ringGeometry args={[0.78, 1.0, 40]} />
-          <meshBasicMaterial color={ACCENT} transparent opacity={0.5} side={THREE.DoubleSide} />
+          <ringGeometry args={[0.82, 1.0, 36]} />
+          <meshBasicMaterial color={ACCENT} transparent opacity={0.45} side={THREE.DoubleSide} />
         </mesh>
         <mesh ref={chargeRef}>
-          <ringGeometry args={[0.0, 0.8, 40]} />
+          <ringGeometry args={[0.0, 0.8, 36]} />
           <meshBasicMaterial color={ACCENT} transparent opacity={0.2} side={THREE.DoubleSide} />
         </mesh>
         <mesh ref={dotRef}>
