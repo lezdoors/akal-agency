@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { GlobeScene } from "@/scene/GlobeScene";
+import { Adaptivity } from "@/components/GlobeStage/Adaptivity";
 import { updatePointer, resetPointer } from "@/lib/pointerState";
 import { PALETTE } from "@/lib/palette";
 import { perf, reducedMotion, rootSeed, time } from "@/session";
@@ -22,6 +23,13 @@ export function GlobeStage() {
   const tier = perf.resolve();
   const wrapRef = useRef<HTMLDivElement>(null);
 
+  // Adaptive particle-budget cap (1 = full tier budget). Downgraded once if
+  // real FPS shows the device can't hold a usable rate (e.g. software WebGL).
+  const [cap, setCap] = useState<number>(1);
+  const onDowngrade = useCallback((scale: number) => {
+    setCap((c) => Math.min(c, scale));
+  }, []);
+
   useEffect(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;
@@ -39,11 +47,7 @@ export function GlobeStage() {
   }, []);
 
   return (
-    <div
-      ref={wrapRef}
-      className="globe-stage"
-      aria-hidden="true"
-    >
+    <div ref={wrapRef} className="globe-stage" aria-hidden="true">
       <Canvas
         dpr={perf.dpr()}
         gl={{
@@ -58,11 +62,13 @@ export function GlobeStage() {
       >
         <color attach="background" args={[PALETTE.ground]} />
         <ClockDriver />
+        <Adaptivity onDowngrade={onDowngrade} />
         <GlobeScene
           time={time}
           rootSeed={rootSeed}
           features={perf.features()}
           reduced={reducedMotion}
+          capScale={cap}
         />
       </Canvas>
     </div>

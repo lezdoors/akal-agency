@@ -15,6 +15,8 @@ export interface GlobeSceneProps {
   rootSeed: number;
   features: TierFeatures;
   reduced: boolean;
+  /** Adaptive particle-budget cap — 1 = full tier budget, stepped down by Adaptivity. */
+  capScale: number;
 }
 
 /** High-tier instanced budget; scaled down by the quality tier. */
@@ -25,16 +27,23 @@ const BASE_COUNT = 90000;
  * the world clock, drifts with the cursor (sprung via WeightLayer), and turns
  * as the visitor scrolls. Reduced-motion renders a static field.
  */
-export function GlobeScene({ time, rootSeed, features, reduced }: GlobeSceneProps) {
+export function GlobeScene({
+  time,
+  rootSeed,
+  features,
+  reduced,
+  capScale,
+}: GlobeSceneProps) {
   const seed = useMemo(() => new SeedSystem(rootSeed), [rootSeed]);
 
   // Deterministic field layout from the session root.
   const seedStream = useMemo(() => seed.stream("globe.field"), [seed]);
 
-  // Tier-scaled budget.
+  // Tier-scaled budget (then adaptively capped for weak / software-rendered devices).
   const count = useMemo(
-    () => Math.max(2000, Math.round(BASE_COUNT * features.particleScale)),
-    [features.particleScale]
+    () =>
+      Math.max(2000, Math.round(BASE_COUNT * features.particleScale * capScale)),
+    [features.particleScale, capScale]
   );
 
   const spin = useRef<THREE.Group>(null);
@@ -66,12 +75,12 @@ export function GlobeScene({ time, rootSeed, features, reduced }: GlobeSceneProp
     if (mat) mat.uniforms.uTime.value = time.world;
 
     // Pointer parallax — sprung, then halved for calm.
-    const folk: [number, number, number] = [
+    const target: [number, number, number] = [
       PointerState.ny * 0.1,
       PointerState.nx * 0.16,
       0,
     ];
-    drift.setTarget(folk);
+    drift.setTarget(target);
     const [rx, rz] = drift.step(dt);
 
     const s = spin.current;
