@@ -7,7 +7,10 @@ import { updatePointer, resetPointer } from "@/lib/pointerState";
 import { PALETTE } from "@/lib/palette";
 import { perf, reducedMotion, rootSeed, time } from "@/session";
 
-/** Advances the one shared clock on the render loop. */
+/**
+ * Advances the one shared clock on the render loop.
+ * (Only while the canvas is active — hidden tabs stop the loop via Adaptivity.)
+ */
 function ClockDriver() {
   useFrame((_state, dt) => {
     time.tick(Math.min(dt, 0.05));
@@ -18,17 +21,17 @@ function ClockDriver() {
 /**
  * The living world — one fixed full-viewport WebGL stage behind the page
  * content. Chapters scroll over it so the globe is the one continuous world.
+ *
+ * The particle budget starts low (safe even on software WebGL) and Adaptivity
+ * grows it toward the tier budget only when sustained FPS proves a real GPU.
  */
 export function GlobeStage() {
   const tier = perf.resolve();
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  // Adaptive particle-budget cap (1 = full tier budget). Downgraded once if
-  // real FPS shows the device can't hold a usable rate (e.g. software WebGL).
-  const [cap, setCap] = useState<number>(1);
-  const onDowngrade = useCallback((scale: number) => {
-    setCap((c) => Math.min(c, scale));
-  }, []);
+  // Start at a safe budget; grow only on proven performance (see Adaptivity).
+  const [cap, setCap] = useState<number>(0.2);
+  const onAdapt = useCallback((next: number) => setCap(next), []);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -62,7 +65,7 @@ export function GlobeStage() {
       >
         <color attach="background" args={[PALETTE.ground]} />
         <ClockDriver />
-        <Adaptivity onDowngrade={onDowngrade} />
+        <Adaptivity cap={cap} onAdapt={onAdapt} />
         <GlobeScene
           time={time}
           rootSeed={rootSeed}

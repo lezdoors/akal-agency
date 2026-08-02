@@ -1,18 +1,33 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 
+interface AdaptivityProps {
+  /** Current particle-budget cap (fraction of tier budget). */
+  cap: number;
+  /** Called with the next cap whenever FPS dictates a change. */
+  onAdapt: (next: number) => void;
+  min?: number;
+  max?: number;
+}
+
 /**
- * Self-regulating behavior inside the Canvas:
- * - Pauses the render loop entirely when the tab is hidden (no wasted GPU work).
- * - Samples real FPS; if the device can't hold a usable rate (e.g. software
- *   WebGL / no GPU), it steps the particle budget down once. The lab's design
- *   intended lazily-sampled FPS to drive the tier — this is that hook.
+ * Self-regulating render policy inside the Canvas:
+ * - Starts at a low, safe budget and **grows** only when sustained 60fps proves
+ *   a capable GPU — so slow / software WebGL never pegs the main thread.
+ * - Shrinks if the device can't hold a usable rate.
+ * - Pauses the render loop entirely while the tab is hidden.
+ *
+ * This is the lab's intended "lazily-sampled FPS drives the tier" mechanism.
  */
-export function Adaptivity({ onDowngrade }: { onDowngrade: (scale: number) => void }) {
+export function Adaptivity({
+  cap,
+  onAdapt,
+  min = 0.15,
+  max = 1,
+}: AdaptivityProps) {
   const setFrameloop = useThree((s) => s.setFrameloop);
   const frames = useRef(0);
   const start = useRef(0);
-  const downgraded = useRef(false);
 
   useEffect(() => {
     const onVis = () => setFrameloop(document.hidden ? "never" : "always");
@@ -21,16 +36,24 @@ export function Adaptivity({ onDowngrade }: { onDowngrade: (scale: number) => vo
   }, [setFrameloop]);
 
   useFrame(() => {
-    if (downgraded.current) return;
     const t = performance.now();
     if (frames.current === 0) start.current = t;
     frames.current += 1;
-    const dt = t - start.current;
-    if (dt < 2000) return;
-    const fps = (frames.current / dt) * 1000;
-    if (fps < 16) onDowngrade(0.15);
-    else if (fps < 30) onDowngrade(0.4);
-    downgraded.current = true;
+    const elapsed = t - start.current;
+    if (elapsed < 800) return;
+
+    const fps = (frames.current / elapsed) * 1000;
+    frames.current = 0;
+    start.current = t;
+
+    // Grow fast only on a strong rate; shrink aggressively when weak.
+    const next =
+      fps >= 55
+        ? Math.min(max, cap * 3)
+        : fps < 25
+        ? Math.max(min, cap * 0.5)
+        : cap;
+    if (Math.abs(next - cap) > 0.001) onAdapt(next);
   });
 
   return null;
