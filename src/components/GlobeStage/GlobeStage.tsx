@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { GlobeScene } from "@/scene/GlobeScene";
+import { InteractionLayer } from "@/scene/InteractionLayer";
 import { Adaptivity } from "@/components/GlobeStage/Adaptivity";
 import { updatePointer, resetPointer } from "@/lib/pointerState";
 import { PALETTE } from "@/lib/palette";
@@ -21,8 +22,9 @@ function ClockDriver() {
 /**
  * The living world — one fixed full-viewport WebGL stage behind the page
  * content. Chapters scroll over it so the globe is the one continuous world.
+ * Phase 2 adds the interactive CursorField / qualification / Chord + CameraSystem.
  *
- * The particle budget starts low (safe even on software WebGL) and Adaptivity
+ * Particle budget starts low (safe even on software WebGL) and Adaptivity
  * grows it toward the tier budget only when sustained FPS proves a real GPU.
  */
 export function GlobeStage() {
@@ -72,6 +74,12 @@ export function GlobeStage() {
           features={perf.features()}
           reduced={reducedMotion}
           capScale={cap}
+        />
+        <InteractionLayer
+          time={time}
+          rootSeed={rootSeed}
+          tier={tier}
+          reduced={reducedMotion}
         />
       </Canvas>
     </div>
