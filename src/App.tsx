@@ -1,89 +1,71 @@
-import site from "./config/site";
-import { Nav } from "./sections/Nav/Nav";
-import { Hero } from "./sections/Hero/Hero";
-import { About } from "./sections/About/About";
-import { Reel } from "./sections/Reel/Reel";
-import { PlateIndex } from "./sections/PlateIndex/PlateIndex";
-import { Manifesto } from "./sections/Manifesto/Manifesto";
-import { Process } from "./sections/Process/Process";
-import { Audience } from "./sections/Audience/Audience";
-import { Contact } from "./sections/Contact/Contact";
-import { Footer } from "./sections/Footer/Footer";
-import { GroundField } from "./components/GroundField/GroundField";
-import { ShapeCarry } from "./components/ShapeCarry/ShapeCarry";
-import { ClosingStroke } from "./components/ClosingStroke/ClosingStroke";
+import { lazy, Suspense, useEffect } from "react";
+import Lenis from "lenis";
+import { Nav } from "@/sections/Nav/Nav";
+import { Hero } from "@/sections/Hero/Hero";
+import { Chapter } from "@/sections/Chapter/Chapter";
+import { Invitation } from "@/sections/Invitation/Invitation";
+import { Footer } from "@/sections/Footer/Footer";
+import site from "@/config/site";
+import { reducedMotion, time } from "@/session";
 
 /**
- * AKAL — a marketing agency selling one accountable team. Register: paper is
- * home (ink-wash), dark is where lime lives. Ground rhythm paper→dark→paper→
- * dark→paper→dark, linked by the non-fade GroundField + the carried ink arc.
- * The ClosingStroke closes at the footer.
+ * The globe (and its three.js runtime) is code-split so the page shell paints
+ * immediately and the procedural world mounts just after first paint — no
+ * WebGL download blocks the content.
  */
+const GlobeStage = lazy(() =>
+  import("@/components/GlobeStage/GlobeStage").then((m) => ({
+    default: m.GlobeStage,
+  }))
+);
+
+/**
+ * Smooth scroll drives the world: each frame Lenis advances the shared clock's
+ * live progress so the globe turns as the visitor reads the chapters. Skip
+ * entirely under reduced motion (native scroll only).
+ */
+function useScrollDriver() {
+  useEffect(() => {
+    if (reducedMotion) return;
+    const lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
+    let raf = 0;
+    const loop = (t: number) => {
+      lenis.raf(t);
+      time.setProgress(lenis.progress);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(raf);
+      lenis.destroy();
+    };
+  }, []);
+}
+
 export default function App() {
+  useScrollDriver();
+
   return (
     <>
-      <ClosingStroke />
-      <Nav
-        brand={site.brand}
-        links={site.nav}
-        cta={{ label: "Request a growth plan", href: "#contact" }}
-      />
+      {/* One living world, fixed behind everything. */}
+      <Suspense fallback={null}>
+        <GlobeStage />
+      </Suspense>
 
-      <Hero scenes={site.heroScenes} theme={site.heroTheme} />
+      <div className="stage-content">
+        <Nav />
 
-      <About
-        kicker={site.about.kicker}
-        title={site.about.title}
-        body={site.about.body}
-        plate={site.about.plate}
-      />
+        <main>
+          <Hero />
+          <Chapter block={site.system} id="system" />
+          <Chapter block={site.instrument} id="instrument" />
+          <Chapter block={site.platform} id="platform" />
+          <Chapter block={site.route} id="route" />
+          <Invitation />
+        </main>
 
-      <ShapeCarry />
-
-      <Reel
-        kicker={site.reel.kicker}
-        title={site.reel.title}
-        hint={site.reel.hint}
-        media={site.reel.media}
-      />
-
-      <GroundField />
-
-      <PlateIndex
-        kicker={site.plates.kicker}
-        title={site.plates.title}
-        colophon={site.plates.colophon}
-        figures={site.plates.figures}
-      />
-
-      <ShapeCarry />
-
-      <Manifesto intro={site.manifesto.intro} words={site.manifesto.words} />
-
-      <GroundField />
-
-      <Process steps={site.process} />
-
-      <Audience
-        kicker={site.audience.kicker}
-        title={site.audience.title}
-        columns={site.audience.columns}
-      />
-
-      <ShapeCarry />
-
-      <Contact
-        kicker={site.contact.kicker}
-        title={site.contact.title}
-        body={site.contact.body}
-      />
-
-      <Footer
-        brand={site.brand}
-        tagline={site.footer.tagline}
-        line={site.footer.line}
-        links={site.nav}
-      />
+        <Footer />
+      </div>
     </>
   );
 }

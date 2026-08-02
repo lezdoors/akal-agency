@@ -1,62 +1,41 @@
-import { useEffect, useState } from "react";
-import type { NavLink } from "../../config/site";
-import "./Nav.css";
-
-export interface NavProps {
-  brand: string;
-  links: NavLink[];
-  cta?: { label: string; href: string };
-}
+import site from "@/config/site";
 
 /**
- * Fixed top navigation — the conversion path, so it NEVER hides on scroll.
- * Brand left, anchor links right, the CTA ("Request a growth plan") always in
- * view. It only adds a dark scrim once scrolled off the hero. Motion is
- * background/transform only; no layout thrash, no hide-on-scroll-down.
- *
- * Ground-aware tint: at the very top (over the paper hero) the bar is
- * transparent with ink type and an ink CTA pill; once scrolled it takes the
- * dark scrim and the CTA turns lime (lime only ever appears on a dark ground).
+ * Top bar — one matte panel over the world. Thin hairline, mono micro-labels,
+ * single CTA ("Talk to us") carried everywhere.
  */
-export function Nav({ brand, links, cta }: NavProps) {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    let raf = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        setScrolled((window.scrollY || 0) > 40);
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
-
+export function Nav() {
   return (
-    <header
-      id="site-nav"
-      className={`akal-nav${scrolled ? " akal-nav--scrolled" : ""}`}
-    >
-      <a className="akal-nav__brand" href="#top">
-        {brand}
+    <header className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-6 px-6 md:px-10 h-[var(--nav-h)] bg-akal-ground/50 backdrop-blur-md border-b border-akal-hairline/60">
+      <a href="#top" className="flex items-center gap-3">
+        <img
+          src={site.media.monogram}
+          alt="AKAL monogram"
+          className="h-7 w-auto"
+        />
+        <span className="font-display font-semibold tracking-tight">
+          {site.brand}
+        </span>
       </a>
-      <nav className="akal-nav__links" aria-label="Primary">
-        {links.map((l) => (
-          <a key={l.href} className="akal-nav__link" href={l.href}>
-            {l.label}
+
+      <nav className="hidden md:flex items-center gap-7 mono text-akal-muted">
+        {site.nav.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            className="transition-colors hover:text-akal-ink"
+          >
+            {link.label}
           </a>
         ))}
       </nav>
-      {cta && (
-        <a className="akal-nav__cta" href={cta.href}>
-          {cta.label}
-        </a>
-      )}
+
+      <a
+        href={site.hero.ctaHref}
+        className="mono inline-flex items-center gap-2 rounded-full border border-akal-hairline px-4 py-2 text-akal-accent transition-colors hover:border-akal-accent/60 hover:text-akal-ink"
+      >
+        {site.hero.cta}
+      </a>
     </header>
   );
 }

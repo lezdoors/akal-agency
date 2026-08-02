@@ -1,31 +1,24 @@
-@import "./assets/fonts/fonts.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ------------------------------------------------------------------ *
- * AKAL design tokens
+ * AKAL — cold-luxury ice on instrument-dark. One accent, all dark.
+ * The interface stays matte; the procedural world emits light.
  * ------------------------------------------------------------------ */
 :root {
-  --akal-bg: #0f1512;
-  --akal-bg-2: #0c1110;
-  --akal-ink: #f5f3ee;
-  --akal-muted: #8e8680;
-  --akal-accent: #b7e34a;
-  --akal-accent-strong: #a0d030;
-  --akal-card: #1a1c1e;
-  --akal-paper: #f5f3ee;
-  --akal-paper-ink: #1a1c1e;
-  --akal-paper-muted: #8e8680;
-  --akal-paper-body: #3a3b33;
-  --akal-accent-paper: #a86b3f;
-  --akal-mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --ground: #0a0c10;
+  --panel: #12151b;
+  --hairline: #20262f;
+  --ink: #eff2f6;
+  --muted: #98a2b0;
+  --accent: #7fa7c4;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
-
-  --nav-h: 4rem;
+  --nav-h: 4.5rem;
 }
 
 @layer base {
@@ -42,10 +35,11 @@
 
   body {
     margin: 0;
-    background: var(--akal-bg);
-    color: var(--akal-ink);
-    font-family: "Inter Tight", system-ui, -apple-system, sans-serif;
-    line-height: 1.5;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Geist Variable", "Geist", system-ui, sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overflow-x: clip;
@@ -55,9 +49,10 @@
   h2,
   h3,
   h4 {
-    font-family: "Cabinet Grotesk", system-ui, sans-serif;
-    font-weight: 700;
+    font-family: "Geist Variable", "Geist", system-ui, sans-serif;
+    font-weight: 600;
     letter-spacing: -0.03em;
+    color: var(--ink);
   }
 
   a {
@@ -70,30 +65,54 @@
     cursor: pointer;
   }
 
-  /* pump safe-area handling for inset frames */
   ::selection {
-    background: var(--akal-accent);
-    color: var(--akal-bg);
+    background: var(--accent);
+    color: var(--ground);
   }
 }
 
 @layer utilities {
   .font-display {
-    font-family: "Cabinet Grotesk", system-ui, sans-serif;
+    font-family: "Geist Variable", "Geist", system-ui, sans-serif;
   }
-  .font-body {
-    font-family: "Inter Tight", system-ui, sans-serif;
-  }
-  /* The brutalist micro-layer: mono micro-labels + tabular numerals. */
   .mono {
-    font-family: var(--akal-mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
+    font-family: "Geist Mono Variable", "Geist Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * The living world — one fixed canvas behind the chapters.
+ * ------------------------------------------------------------------ */
+.globe-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: auto;
+}
+
+/* Scrim: keeps type legible over the luminous world without hiding it. */
+.globe-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(10, 12, 16, 0.7) 100%),
+    linear-gradient(180deg, rgba(10, 12, 16, 0.8) 0%, rgba(10, 12, 16, 0.35) 30%, transparent 45%, transparent 60%, rgba(10, 12, 16, 0.9) 100%);
+}
+
+/* ------------------------------------------------------------------ *
+ * Layout over the world.
+ * ------------------------------------------------------------------ */
+.stage-content {
+  position: relative;
+  z-index: 1;
 }
 
 /* ------------------------------------------------------------------ *
@@ -110,7 +129,6 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-  /* any element carrying [data-reveal-state] is forced to its done pose */
   [data-reveal-state] {
     opacity: 1 !important;
     transform: none !important;

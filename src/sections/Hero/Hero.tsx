@@ -1,52 +1,34 @@
-import type { ScrollScrubScene, ScrollScrubTheme } from "./ScrollScrub";
-import { ScrollScrub } from "./ScrollScrub";
-import "./hero-frame.css";
-
-export interface HeroMedia {
-  id: string;
-  label: string;
-  title: string;
-  body: string;
-  kicker?: string;
-  tags?: string[];
-  poster: string;
-  mobilePoster?: string;
-  clip: string;
-  mobileClip?: string;
-}
-
-export interface HeroProps {
-  /** Scenes to scrub, derived from config — passed as props, never hardcoded. */
-  scenes: HeroMedia[];
-  theme: ScrollScrubTheme;
-}
+import site from "@/config/site";
 
 /**
- * Scroll-driven hero. Reuses the trusted ScrollScrub engine verbatim — this
- * wrapper only adds the MODERN chrome framing the antique film: the mono
- * "set / figure" index bar, the registration mark and hairlines. The collision
- * starts in the first viewport.
+ * The World — hero. Headline sits over the living globe; the stage is fixed
+ * behind so the world is already turning as the visitor arrives.
  */
-export function Hero({ scenes, theme }: HeroProps) {
+export function Hero() {
   return (
-    <main id="top" className="hero">
-      <div className="hero__frame">
-        <span className="hero__edge hero__edge--l" aria-hidden="true" />
-        <span className="hero__edge hero__edge--r" aria-hidden="true" />
-        {scenes[0] && (
-          <div className="hero__index mono tabular">
-            <span>SET № 001 — WARM PAPER / BRUTALIST SET</span>
-            <span className="hero__reg" aria-hidden="true">
-              + FIG. 001
-            </span>
-          </div>
-        )}
-      </div>
-      <ScrollScrub
-        theme={theme}
-        connectors={[]}
-        scenes={scenes as ScrollScrubScene[]}
-      />
-    </main>
+    <section
+      id="top"
+      className="relative flex min-h-[100svh] flex-col justify-center px-6 md:px-12 max-w-4xl"
+    >
+      <p className="mono mb-8 text-akal-accent">
+        {site.brand} — the acquisition operating system
+      </p>
+
+      <h1 className="text-5xl font-semibold leading-[1.02] tracking-[-0.03em] md:text-7xl">
+        {site.headline}
+      </h1>
+
+      <p className="mt-8 max-w-xl text-lg text-akal-muted">{site.hero.sub}</p>
+
+      <a
+        href={site.hero.ctaHref}
+        className="mt-12 inline-flex w-fit items-center gap-2 rounded-full border border-akal-hairline px-6 py-3 font-display font-medium text-akal-ink transition-colors hover:border-akal-accent/60 hover:bg-akal-panel/40"
+      >
+        {site.hero.cta}
+        <span aria-hidden="true" className="text-akal-accent">
+          →
+        </span>
+      </a>
+    </section>
   );
 }

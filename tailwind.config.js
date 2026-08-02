@@ -5,16 +5,22 @@ export default {
     extend: {
       colors: {
         akal: {
-          bg: "#0F1512",
-          ink: "#F5F3EE",
-          accent: "#B7E34A",
-          muted: "#8E8680",
-          card: "#1A1C1E",
+          ground: "#0A0C10",
+          panel: "#12151B",
+          hairline: "#20262F",
+          ink: "#EFF2F6",
+          muted: "#98A2B0",
+          accent: "#7FA7C4",
         },
       },
       fontFamily: {
-        display: ["Cabinet Grotesk", "system-ui", "sans-serif"],
-        body: ["Inter Tight", "system-ui", "sans-serif"],
+        display: [
+          "Geist Variable",
+          "Geist",
+          "system-ui",
+          "sans-serif",
+        ],
+        mono: ["Geist Mono Variable", "Geist Mono", "ui-monospace", "monospace"],
       },
     },
   },
