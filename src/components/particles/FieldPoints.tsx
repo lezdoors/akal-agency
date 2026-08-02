@@ -12,6 +12,8 @@ export interface FieldPointsProps {
   opacity?: number;
   visible?: boolean;
   materialRef?: Ref<THREE.ShaderMaterial>;
+  /** Render blending — additive (default) or normal (diagnostic override). */
+  blending?: THREE.Blending;
 }
 
 /**
@@ -29,6 +31,7 @@ export const FieldPoints = forwardRef<THREE.Points, FieldPointsProps>(
       opacity = 0.65,
       visible = true,
       materialRef,
+      blending = THREE.AdditiveBlending,
     },
     ref
   ) {
@@ -59,7 +62,7 @@ export const FieldPoints = forwardRef<THREE.Points, FieldPointsProps>(
           fragmentShader={fieldFragment}
           transparent
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={blending}
           uniforms={{
             uTime: { value: 0 },
             uSize: { value: size },

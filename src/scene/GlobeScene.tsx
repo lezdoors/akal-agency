@@ -10,7 +10,9 @@ import { Vec3Spring } from "@/systems/weight/WeightLayer";
 import { PointerState } from "@/lib/pointerState";
 import { smoothstep, clamp01 } from "@/lib/math";
 import { RGB } from "@/lib/palette";
+import { LiveStats } from "@/lib/liveStats";
 import { worldState } from "@/film/state";
+import type { BlendMode } from "@/diag";
 
 export interface GlobeSceneProps {
   time: TimeSystem;
@@ -18,6 +20,8 @@ export interface GlobeSceneProps {
   features: TierFeatures;
   reduced: boolean;
   capScale: number;
+  blend: BlendMode;
+  opacityScale: number;
 }
 
 const BASE_COUNT = 86000;
@@ -28,7 +32,6 @@ function clampAngle(a: THREE.Vector3, b: THREE.Vector3): number {
   return Math.acos(clamp01(a.dot(b)));
 }
 
-/** Great-circle arc between two random unit dirs (lerp+normalize), lifted up. */
 function arcStrip(rng: () => number, radius: number, segs = 40): THREE.BufferGeometry {
   const a = new THREE.Vector3().setFromSphericalCoords(1, Math.acos(2 * rng() - 1), rng() * Math.PI * 2);
   const b = new THREE.Vector3().setFromSphericalCoords(1, Math.acos(2 * rng() - 1), rng() * Math.PI * 2);
@@ -46,16 +49,11 @@ function arcStrip(rng: () => number, radius: number, segs = 40): THREE.BufferGeo
   return g;
 }
 
-/**
- * The world — sculptural steel-ice, not a muddy blob: a dense instanced point
- * field (crisp dots + additive core), surface routes as the world's language,
- * an interior micro-field revealed through the Portal, and a Single-Route
- * collapse onto one surviving connection.
- */
-export function GlobeScene({ time, rootSeed, features, reduced, capScale }: GlobeSceneProps) {
+export function GlobeScene({ time, rootSeed, features, reduced, capScale, blend, opacityScale }: GlobeSceneProps) {
   const seed = useMemo(() => new SeedSystem(rootSeed), [rootSeed]);
   const seedStream = useMemo(() => seed.stream("globe.field"), [seed]);
   const innerSeedStream = useMemo(() => seed.stream("globe.interior"), [seed]);
+  const blendMode = blend === "normal" ? THREE.NormalBlending : THREE.AdditiveBlending;
 
   const count = useMemo(
     () => Math.max(3000, Math.round(BASE_COUNT * features.particleScale * capScale)),
@@ -71,10 +69,7 @@ export function GlobeScene({ time, rootSeed, features, reduced, capScale }: Glob
   const outerMat = useRef<THREE.ShaderMaterial>(null);
   const innerMat = useRef<THREE.ShaderMaterial>(null);
 
-  const color = useMemo(
-    () => new THREE.Color(RGB.accent[0] / 255, RGB.accent[1] / 255, RGB.accent[2] / 255),
-    []
-  );
+  const color = useMemo(() => new THREE.Color(RGB.accent[0] / 255, RGB.accent[1] / 255, RGB.accent[2] / 255), []);
   const drift = useMemo(() => new Vec3Spring([0, 0, 0], "cursor"), []);
 
   const routes = useMemo(() => {
@@ -82,13 +77,7 @@ export function GlobeScene({ time, rootSeed, features, reduced, capScale }: Glob
     return Array.from({ length: ROUTES }, (_, i) => {
       const line = new THREE.Line(
         arcStrip(rng, 1.9),
-        new THREE.LineBasicMaterial({
-          color,
-          transparent: true,
-          opacity: 0,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-        })
+        new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })
       );
       line.frustumCulled = false;
       const packet = new THREE.Mesh(
@@ -104,26 +93,23 @@ export function GlobeScene({ time, rootSeed, features, reduced, capScale }: Glob
 
   const core = useMemo(
     () =>
-      new THREE.MeshBasicMaterial({
-        color,
-        transparent: true,
-        opacity: 0,
-        blending: THREE.AdditiveBlending,
-        side: THREE.BackSide,
-        depthWrite: false,
-      }),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, side: THREE.BackSide, depthWrite: false }),
     [color]
   );
   const coreRef = useRef(core);
   coreRef.current = core;
+
+  // Publish live counts for the diagnostics panel.
+  LiveStats.pointCount = count + innerCount;
+  LiveStats.routeCount = ROUTES;
 
   useFrame((_state, rawDt) => {
     const dt = Math.min(rawDt, 0.05);
     const ws = worldState;
 
     if (reduced) {
-      if (outerMat.current) outerMat.current.uniforms.uOpacity.value = 0.55;
-      if (coreRef.current) coreRef.current.opacity = 0.08;
+      if (outerMat.current) outerMat.current.uniforms.uOpacity.value = 0.55 * opacityScale;
+      if (coreRef.current) coreRef.current.opacity = 0.08 * opacityScale;
       if (innerMat.current) innerMat.current.uniforms.uOpacity.value = 0;
       return;
     }
@@ -131,15 +117,15 @@ export function GlobeScene({ time, rootSeed, features, reduced, capScale }: Glob
     if (outerMat.current) {
       outerMat.current.uniforms.uTime.value = time.world;
       const boot = smoothstep(0.02, 0.8, ws.boot);
-      outerMat.current.uniforms.uOpacity.value = (0.2 + 0.8 * boot) * 0.72 * (1 - ws.interior * 0.55);
+      outerMat.current.uniforms.uOpacity.value = (0.2 + 0.8 * boot) * 0.72 * opacityScale * (1 - ws.interior * 0.55);
       outerMat.current.uniforms.uSize.value = 3.0 * (0.6 + 0.4 * boot);
     }
     if (coreRef.current) {
-      coreRef.current.opacity = (0.02 + 0.1 * smoothstep(0.3, 1, ws.boot)) * (1 - ws.interior * 0.8);
+      coreRef.current.opacity = (0.02 + 0.1 * smoothstep(0.3, 1, ws.boot)) * opacityScale * (1 - ws.interior * 0.8);
     }
     if (innerMat.current) {
       innerMat.current.uniforms.uTime.value = time.world;
-      innerMat.current.uniforms.uOpacity.value = 0.5 * ws.interior;
+      innerMat.current.uniforms.uOpacity.value = 0.5 * ws.interior * opacityScale;
     }
 
     const survivor = ws.survivorIndex;
@@ -180,14 +166,14 @@ export function GlobeScene({ time, rootSeed, features, reduced, capScale }: Glob
         <primitive object={core} attach="material" />
       </mesh>
       <group ref={spin}>
-        <GlobeField count={count} radius={1.9} seedStream={seedStream} color={color} materialRef={outerMat as Ref<THREE.ShaderMaterial>} />
+        <GlobeField count={count} radius={1.9} seedStream={seedStream} color={color} materialRef={outerMat as Ref<THREE.ShaderMaterial>} blending={blendMode} />
         {routes.map((r) => (
           <primitive key={r.i} object={r.line} />
         ))}
         {routes.map((r) => (
           <primitive key={r.i} object={r.packet} />
         ))}
-        <GlobeField count={innerCount} radius={1.02} seedStream={innerSeedStream} color={color} materialRef={innerMat as Ref<THREE.ShaderMaterial>} />
+        <GlobeField count={innerCount} radius={1.02} seedStream={innerSeedStream} color={color} materialRef={innerMat as Ref<THREE.ShaderMaterial>} blending={blendMode} opacity={0.6} />
       </group>
     </group>
   );

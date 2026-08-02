@@ -11,9 +11,10 @@ import { FpsMeter } from "@/lib/fps";
 import { LiveStats } from "@/lib/liveStats";
 import { PALETTE } from "@/lib/palette";
 import { perf, reducedMotion, rootSeed, time } from "@/session";
+import { dbg, lockBudget } from "@/diag";
 import { TimeSystem } from "@/systems/time/TimeSystem";
 
-function ClockDriver({ time }: { time: TimeSystem }) {
+function ClockDriver({ time, cap }: { time: TimeSystem; cap: number }) {
   const gl = useThree((s) => s.gl);
   const meter = useRef(new FpsMeter(0.4));
   const last = useRef(0);
@@ -28,20 +29,18 @@ function ClockDriver({ time }: { time: TimeSystem }) {
     LiveStats.calls = info?.render?.calls ?? 0;
     LiveStats.triangles = info?.render?.triangles ?? 0;
     LiveStats.tier = perf.resolve();
+    LiveStats.cap = cap;
   });
   return null;
 }
 
-/**
- * The world, directed by the CameraDirector. One fixed full-viewport stage the
- * camera travels through. If WebGL is unavailable, it degrades to the static
- * poster so the film's content remains reachable.
- */
 export function GlobeStage() {
   const tier = perf.resolve();
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [cap, setCap] = useState<number>(0.2);
-  const onAdapt = useCallback((next: number) => setCap(next), []);
+  const [cap, setCap] = useState<number>(dbg.cap ?? 0.2);
+  const onAdapt = useCallback((next: number) => {
+    if (!lockBudget) setCap(next);
+  }, []);
   const [glOK] = useState<boolean>(() => {
     try {
       const c = document.createElement("canvas");
@@ -77,10 +76,15 @@ export function GlobeStage() {
           onCreated={({ gl }) => {
             gl.outputColorSpace = THREE.SRGBColorSpace;
             gl.toneMapping = THREE.ACESFilmicToneMapping;
+            LiveStats.colorSpace = "srgb";
+            LiveStats.toneMapping = "aces";
+            LiveStats.blend = dbg.blend;
+            LiveStats.exposure = dbg.opacity;
+            LiveStats.reduced = reducedMotion;
           }}
         >
           <color attach="background" args={[PALETTE.ground]} />
-          <ClockDriver time={time} />
+          <ClockDriver time={time} cap={cap} />
           <Adaptivity cap={cap} onAdapt={onAdapt} />
           <FilmDirector time={time} />
           <GlobeScene
@@ -89,6 +93,8 @@ export function GlobeStage() {
             features={perf.features()}
             reduced={reducedMotion}
             capScale={cap}
+            blend={dbg.blend}
+            opacityScale={dbg.opacity}
           />
           <InteractionLayer
             time={time}
