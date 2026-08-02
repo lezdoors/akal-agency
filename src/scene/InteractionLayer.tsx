@@ -64,6 +64,7 @@ export function InteractionLayer({
   const reticleRef = useRef<THREE.Group>(null);
   const chargeRef = useRef<THREE.Mesh>(null);
   const dotRef = useRef<THREE.Mesh>(null);
+  const lockRef = useRef<THREE.Mesh>(null);
   const leadMeshes = useRef<(THREE.Mesh | null)[]>([]);
 
   const [anchor, setAnchor] = useState<THREE.Vector3 | null>(null);
@@ -100,6 +101,7 @@ export function InteractionLayer({
         reticleRef.current.lookAt(camera.position);
       }
       if (chargeRef.current) (chargeRef.current.material as THREE.MeshBasicMaterial).opacity = 0;
+      if (lockRef.current) (lockRef.current.material as THREE.MeshBasicMaterial).opacity = 0;
       if (dotRef.current) (dotRef.current.material as THREE.MeshBasicMaterial).opacity = 0.7;
       return;
     }
@@ -164,12 +166,16 @@ export function InteractionLayer({
     }
 
     const charge = controller.charge01();
+    const charging = s === "charging";
     if (chargeRef.current) {
-      const c = locked ? 0 : Math.max(0.05, charge);
-      chargeRef.current.scale.setScalar(c);
-      (chargeRef.current.material as THREE.MeshBasicMaterial).opacity = locked ? 0 : 0.2 + 0.55 * c;
+      chargeRef.current.scale.setScalar(charging ? Math.max(0.3, charge) : 0.01);
+      (chargeRef.current.material as THREE.MeshBasicMaterial).opacity = charging ? 0.1 + 0.5 * charge : 0;
     }
-    if (dotRef.current) (dotRef.current.material as THREE.MeshBasicMaterial).opacity = locked ? 1 : 0.7;
+    if (lockRef.current) {
+      lockRef.current.scale.setScalar(locked ? 1 : 0.5);
+      (lockRef.current.material as THREE.MeshBasicMaterial).opacity = locked ? 0.55 : 0;
+    }
+    if (dotRef.current) (dotRef.current.material as THREE.MeshBasicMaterial).opacity = locked ? 1 : 0.85;
 
     for (let i = 0; i < leadMeshes.current.length; i++) {
       const m = leadMeshes.current[i];
@@ -191,21 +197,21 @@ export function InteractionLayer({
       {leads.map((lead, i) => (
         <mesh key={i} ref={(el) => { leadMeshes.current[i] = el; }} position={[lead.x, lead.y, lead.z]}>
           <sphereGeometry args={[0.05, 12, 12]} />
-          <meshBasicMaterial color={ACCENT} transparent opacity={0.6} />
+          <meshBasicMaterial color={ACCENT} transparent opacity={0.7} blending={THREE.AdditiveBlending} />
         </mesh>
       ))}
       <group ref={reticleRef}>
-        <mesh>
-          <ringGeometry args={[0.82, 1.0, 36]} />
-          <meshBasicMaterial color={ACCENT} transparent opacity={0.45} side={THREE.DoubleSide} />
-        </mesh>
         <mesh ref={chargeRef}>
-          <ringGeometry args={[0.0, 0.8, 36]} />
-          <meshBasicMaterial color={ACCENT} transparent opacity={0.2} side={THREE.DoubleSide} />
+          <ringGeometry args={[0.84, 1.0, 48]} />
+          <meshBasicMaterial color={ACCENT} transparent opacity={0} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh ref={lockRef}>
+          <ringGeometry args={[0.9, 1.0, 48]} />
+          <meshBasicMaterial color={ACCENT} transparent opacity={0} side={THREE.DoubleSide} />
         </mesh>
         <mesh ref={dotRef}>
-          <circleGeometry args={[0.05, 20]} />
-          <meshBasicMaterial color={ACCENT} transparent opacity={0.9} side={THREE.DoubleSide} />
+          <circleGeometry args={[0.025, 16]} />
+          <meshBasicMaterial color={ACCENT} transparent opacity={0.85} side={THREE.DoubleSide} />
         </mesh>
       </group>
     </>

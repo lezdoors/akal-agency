@@ -78,7 +78,7 @@ export function GlobeStage() {
             gl.toneMapping = THREE.ACESFilmicToneMapping;
             LiveStats.colorSpace = "srgb";
             LiveStats.toneMapping = "aces";
-            LiveStats.blend = dbg.blend;
+            LiveStats.blend = "normal"; // body is normal-blended after the fix pass
             LiveStats.exposure = dbg.opacity;
             LiveStats.reduced = reducedMotion;
           }}
@@ -93,8 +93,8 @@ export function GlobeStage() {
             features={perf.features()}
             reduced={reducedMotion}
             capScale={cap}
-            blend={dbg.blend}
             opacityScale={dbg.opacity}
+            tier={tier}
           />
           <InteractionLayer
             time={time}

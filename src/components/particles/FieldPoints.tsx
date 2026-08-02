@@ -3,6 +3,9 @@ import type { Ref } from "react";
 import * as THREE from "three";
 import { fieldVertex, fieldFragment } from "@/shaders/field";
 
+/** Upper-left key light, in object space (creates sculptural depth). */
+const LIGHT = new THREE.Vector3(-0.45, 0.75, 0.5).normalize();
+
 export interface FieldPointsProps {
   positions: Float32Array;
   count: number;
@@ -68,6 +71,7 @@ export const FieldPoints = forwardRef<THREE.Points, FieldPointsProps>(
             uSize: { value: size },
             uColor: { value: col },
             uOpacity: { value: opacity },
+            uLight: { value: LIGHT },
           }}
         />
       </points>

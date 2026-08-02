@@ -13,6 +13,7 @@ export interface GlobeFieldProps {
   materialRef?: Ref<THREE.ShaderMaterial>;
   blending?: THREE.Blending;
   opacity?: number;
+  size?: number;
 }
 
 /**
@@ -27,6 +28,7 @@ export function GlobeField({
   materialRef,
   blending,
   opacity = 0.7,
+  size = 2.2,
 }: GlobeFieldProps) {
   const positions = useMemo(
     () => spherePoints(count, radius, seedStream),
@@ -43,7 +45,7 @@ export function GlobeField({
       seeds={seeds}
       count={count}
       color={color ?? new THREE.Color(PALETTE.accent)}
-      size={2.2}
+      size={size}
       opacity={opacity}
       materialRef={materialRef}
       blending={blending}
