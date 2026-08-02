@@ -1,8 +1,16 @@
 # AKAL — Production Plan (Blueprint v2, presentation layer)
 
 `akal-agency` is the **production presentation layer** of AKAL — a living
-acquisition operating system. This file is the living build plan. Deeper
-creative/technical detail lives in **Blueprint v2** in the engineering lab
+acquisition operating system. This file is the living build plan.
+
+> **THE SCREENPLAY GOVERNS THE EXPERIENCE.** `docs/camera-story-spec.md` is the
+> Camera Story Specification — the film's screenplay: every scene, camera move,
+> transition, interaction, emotional beat, world state, reverse-scroll and
+> mobile adaptation. The CameraSystem is the director; the page is one continuous
+> film, not a set of sections. Chapters are **scenes**; nothing moves without
+> narrative intent. Implement all experience work from that document.
+
+Deeper creative/technical detail lives in **Blueprint v2** in the engineering lab
 (`HF-akal-agency/docs/architecture.md` and `docs/phase0-results.md`); this
 plan links there instead of duplicating it.
 
