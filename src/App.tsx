@@ -71,7 +71,7 @@ export default function App() {
       {/* The film — one tall track the camera travels; copy anchors to scene beats. */}
       <div className="film-track relative" style={{ height: "1000vh" }}>
         {/* The World */}
-        <SceneText at={0.025}>
+        <SceneText at={0.025} anchor="top">
           <p className="mono mb-5 text-akal-accent">AKAL — the acquisition operating system</p>
           <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.03em] md:text-7xl">
             The infrastructure for<br />customer acquisition.
@@ -125,11 +125,11 @@ export default function App() {
         </SceneText>
 
         {/* The Invitation */}
-        <SceneText at={0.955} align="left" maxW="34rem">
+        <SceneText at={0.955} align="left" anchor="bottom" maxW="52rem" className="scene-invite">
           <p className="mono mb-3 text-akal-muted">// The Invitation</p>
-          <h2 className="text-3xl font-semibold tracking-[-0.02em] md:text-5xl">We build experiences like this.</h2>
-          <p className="mt-3 text-akal-muted">The world has resolved to one route — yours.</p>
-          <div className="mt-10">
+          <h2 className="text-3xl font-semibold tracking-[-0.02em] md:text-4xl">We build experiences like this.</h2>
+          <p className="mt-2 text-akal-muted">The world has resolved to one route — yours.</p>
+          <div className="mt-6">
             <QualificationForm />
           </div>
         </SceneText>

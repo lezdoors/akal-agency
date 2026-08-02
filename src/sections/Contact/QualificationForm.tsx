@@ -48,8 +48,8 @@ export function QualificationForm() {
     "w-full rounded-md border border-akal-hairline bg-akal-panel/70 px-3 py-2 text-sm text-akal-ink placeholder:text-akal-muted/60 outline-none focus:border-akal-accent/60";
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4" noValidate={false}>
-      <div className="grid gap-4 sm:grid-cols-2">
+    <form onSubmit={submit} className="flex flex-col gap-3" noValidate={false}>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {FIELDS.map((f) => (
           <label key={f.key} className="flex flex-col gap-1.5">
             <span className="mono text-akal-muted">{f.label}</span>
@@ -62,30 +62,32 @@ export function QualificationForm() {
             />
           </label>
         ))}
+        <label className="flex flex-col gap-1.5">
+          <span className="mono text-akal-muted">Phone (optional)</span>
+          <input className={inputCls} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </label>
       </div>
-      <label className="flex flex-col gap-1.5">
-        <span className="mono text-akal-muted">Approximate monthly lead volume</span>
-        <select className={inputCls} value={volume} onChange={(e) => setVolume(e.target.value)}>
-          <option value="">Select…</option>
-          <option>Under 100</option>
-          <option>100–1,000</option>
-          <option>1,000–10,000</option>
-          <option>10,000+</option>
-        </select>
-      </label>
-      <label className="flex flex-col gap-1.5">
-        <span className="mono text-akal-muted">Current acquisition challenge</span>
-        <textarea
-          className={inputCls}
-          rows={3}
-          value={challenge}
-          onChange={(e) => setChallenge(e.target.value)}
-        />
-      </label>
-      <label className="flex flex-col gap-1.5">
-        <span className="mono text-akal-muted">Phone (optional)</span>
-        <input className={inputCls} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
-      </label>
+      <div className="grid gap-3 lg:grid-cols-3">
+        <label className="flex flex-col gap-1.5">
+          <span className="mono text-akal-muted">Monthly lead volume</span>
+          <select className={inputCls} value={volume} onChange={(e) => setVolume(e.target.value)}>
+            <option value="">Select…</option>
+            <option>Under 100</option>
+            <option>100–1,000</option>
+            <option>1,000–10,000</option>
+            <option>10,000+</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1.5 lg:col-span-2">
+          <span className="mono text-akal-muted">Current acquisition challenge</span>
+          <textarea
+            className={inputCls}
+            rows={2}
+            value={challenge}
+            onChange={(e) => setChallenge(e.target.value)}
+          />
+        </label>
+      </div>
       <button
         type="submit"
         className="mt-2 inline-flex w-fit items-center gap-2 rounded-full border border-akal-hairline bg-akal-panel/40 px-6 py-3 font-display text-sm font-medium text-akal-ink transition-colors hover:border-akal-accent/60"

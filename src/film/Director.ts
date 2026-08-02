@@ -12,7 +12,7 @@
  * remains the single voice.
  */
 import * as THREE from "three";
-import { clamp01, damp } from "@/lib/math";
+import { clamp01, lerp } from "@/lib/math";
 
 export interface ShotKey {
   /** film progress this pose sits at (0..1) */
@@ -47,17 +47,21 @@ export class CameraDirector {
       const b = t[i + 1];
       if (p >= a.at && p <= b.at) {
         const span = b.at - a.at || 1e-6;
-        // ease (hold at endpoints gives gentle motion)
+        // ease (hold at endpoints gives gentle motion). `s` is already the
+        // eased 0..1 parameter — interpolate with a true lerp so every shot
+        // actually ARRIVES at its keyed pose. (damp(a,b,s,1) only ever
+        // reached 63% of each segment, which left the closing shot parked
+        // inside the globe with a route packet in front of the lens.)
         const s = 1 - Math.pow(1 - clamp01((p - a.at) / span), 3);
         const pos = new THREE.Vector3(
-          damp(a.pos[0], b.pos[0], s, 1),
-          damp(a.pos[1], b.pos[1], s, 1),
-          damp(a.pos[2], b.pos[2], s, 1)
+          lerp(a.pos[0], b.pos[0], s),
+          lerp(a.pos[1], b.pos[1], s),
+          lerp(a.pos[2], b.pos[2], s)
         );
         const aim = new THREE.Vector3(
-          damp(a.aim[0], b.aim[0], s, 1),
-          damp(a.aim[1], b.aim[1], s, 1),
-          damp(a.aim[2], b.aim[2], s, 1)
+          lerp(a.aim[0], b.aim[0], s),
+          lerp(a.aim[1], b.aim[1], s),
+          lerp(a.aim[2], b.aim[2], s)
         );
         const fov = a.fov + (b.fov - a.fov) * s;
         return { pos, aim, fov };

@@ -55,6 +55,11 @@ export class QualifyController {
     this.cycle += 1;
   }
 
+  /** Immediately end any qualification — used when the film leaves the Instrument beat. */
+  forceRelease(): void {
+    if (this.state !== "idle") this.release();
+  }
+
   private release(): void {
     this.state = "idle";
     this.lockedIndex = -1;

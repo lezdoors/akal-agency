@@ -10,12 +10,23 @@ import { TimeSystem } from "@/systems/time/TimeSystem";
 import { Vec3Spring } from "@/systems/weight/WeightLayer";
 import { PointerState } from "@/lib/pointerState";
 import { spherePoints } from "@/lib/geometry";
+import { smoothstep } from "@/lib/math";
 import { RGB } from "@/lib/palette";
 import { worldState } from "@/film/state";
 
 const RADIUS = 1.9;
 const DWELL_DIST = 0.62;
 const DWELL_SPEED = 150;
+
+/**
+ * The qualification belongs to the Instrument beat only. Outside this film
+ * window every prop (leads, rings, chord) is released and hidden — otherwise
+ * the auto-advance keeps cycling locks through the rest of the film and the
+ * closing camera move (which flies to z≈3) ends up with chord packets
+ * centimeters from the lens, rendering as huge shapes over the invitation.
+ */
+const BEAT_START = 0.3;
+const BEAT_END = 0.5;
 
 const TARGET_COUNT: Record<PerfTier, number> = { high: 10, mid: 10, low: 5, reduced: 0 };
 const ACCENT = new THREE.Color(RGB.accent[0] / 255, RGB.accent[1] / 255, RGB.accent[2] / 255);
@@ -106,6 +117,28 @@ export function InteractionLayer({
       return;
     }
 
+    // Confine the whole mechanic to the Instrument beat (bidirectional:
+    // rewinding before the beat re-arms the guaranteed lock).
+    const film = worldState.film;
+    const inBeat = film >= BEAT_START && film <= BEAT_END;
+    if (film < BEAT_START) autoLocked.current = false;
+    if (!inBeat) {
+      controller.forceRelease();
+      if (prevState.current === "locked" || prevState.current === "resolved") setAnchor(null);
+      prevState.current = "idle";
+      if (chargeRef.current) (chargeRef.current.material as THREE.MeshBasicMaterial).opacity = 0;
+      if (lockRef.current) (lockRef.current.material as THREE.MeshBasicMaterial).opacity = 0;
+      if (dotRef.current) (dotRef.current.material as THREE.MeshBasicMaterial).opacity = 0;
+      for (const m of leadMeshes.current) {
+        if (m) (m.material as THREE.MeshBasicMaterial).opacity = 0;
+      }
+      return;
+    }
+
+    const beatFade =
+      smoothstep(BEAT_START, BEAT_START + 0.03, film) *
+      (1 - smoothstep(BEAT_END - 0.03, BEAT_END, film));
+
     // Nearest lead + pointer stillness → dwelling.
     let nearest = -1;
     let nearestDist = Infinity;
@@ -169,19 +202,19 @@ export function InteractionLayer({
     const charging = s === "charging";
     if (chargeRef.current) {
       chargeRef.current.scale.setScalar(charging ? Math.max(0.3, charge) : 0.01);
-      (chargeRef.current.material as THREE.MeshBasicMaterial).opacity = charging ? 0.1 + 0.5 * charge : 0;
+      (chargeRef.current.material as THREE.MeshBasicMaterial).opacity = charging ? (0.1 + 0.5 * charge) * beatFade : 0;
     }
     if (lockRef.current) {
       lockRef.current.scale.setScalar(locked ? 1 : 0.5);
-      (lockRef.current.material as THREE.MeshBasicMaterial).opacity = locked ? 0.55 : 0;
+      (lockRef.current.material as THREE.MeshBasicMaterial).opacity = locked ? 0.55 * beatFade : 0;
     }
-    if (dotRef.current) (dotRef.current.material as THREE.MeshBasicMaterial).opacity = locked ? 1 : 0.85;
+    if (dotRef.current) (dotRef.current.material as THREE.MeshBasicMaterial).opacity = (locked ? 1 : 0.85) * beatFade;
 
     for (let i = 0; i < leadMeshes.current.length; i++) {
       const m = leadMeshes.current[i];
       if (!m) continue;
       const isLead = controller.lockedIndex === i;
-      (m.material as THREE.MeshBasicMaterial).opacity = isLead ? 1 : 0.6;
+      (m.material as THREE.MeshBasicMaterial).opacity = (isLead ? 1 : 0.6) * beatFade;
       const ts = isLead ? 1.7 : 1;
       m.scale.x += (ts - m.scale.x) * Math.min(1, dt * 8);
       m.scale.y = m.scale.x;
@@ -202,11 +235,11 @@ export function InteractionLayer({
       ))}
       <group ref={reticleRef}>
         <mesh ref={chargeRef}>
-          <ringGeometry args={[0.84, 1.0, 48]} />
+          <ringGeometry args={[0.185, 0.22, 48]} />
           <meshBasicMaterial color={ACCENT} transparent opacity={0} side={THREE.DoubleSide} />
         </mesh>
         <mesh ref={lockRef}>
-          <ringGeometry args={[0.9, 1.0, 48]} />
+          <ringGeometry args={[0.198, 0.22, 48]} />
           <meshBasicMaterial color={ACCENT} transparent opacity={0} side={THREE.DoubleSide} />
         </mesh>
         <mesh ref={dotRef}>

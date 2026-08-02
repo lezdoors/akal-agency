@@ -118,6 +118,19 @@
   pointer-events: none;
   will-change: opacity;
 }
+/* The Invitation carries its own soft ground so the form stays legible over
+   the close-up world, whatever the tier renders behind it. */
+.scene-invite {
+  padding: 2rem;
+  margin-left: -2rem;
+  border-radius: 1rem;
+  background: radial-gradient(
+    120% 120% at 30% 40%,
+    rgba(10, 12, 16, 0.82) 0%,
+    rgba(10, 12, 16, 0.6) 60%,
+    transparent 100%
+  );
+}
 .scene-text form,
 .scene-text input,
 .scene-text select,
