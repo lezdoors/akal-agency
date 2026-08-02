@@ -31,6 +31,11 @@ interface InteractionLayerProps {
   rootSeed: number;
   tier: PerfTier;
   reduced: boolean;
+  /**
+   * Scene 1 is a handhold only: once enabled (the Instrument scene), the
+   * dwell-charge / lock / Chord / camera-lean pipeline engages.
+   */
+  enableQualification: boolean;
 }
 
 /**
@@ -47,6 +52,7 @@ export function InteractionLayer({
   rootSeed,
   tier,
   reduced,
+  enableQualification,
 }: InteractionLayerProps) {
   const { camera } = useThree();
 
@@ -102,6 +108,23 @@ export function InteractionLayer({
       ray.ray.closestPointToPoint(origin, surface);
       if (surface.lengthSq() > 1e-6) surface.setLength(RADIUS);
       else surface.set(0, 0, RADIUS);
+    }
+
+    // Scene 1: handhold only — the reticle follows; no qualification yet.
+    if (!enableQualification) {
+      reticleSpring.setTarget([surface.x, surface.y, surface.z]);
+      const rp = reticleSpring.step(dt);
+      if (reticleRef.current) {
+        reticleRef.current.position.set(rp[0], rp[1], rp[2]);
+        reticleRef.current.lookAt(camera.position);
+      }
+      if (chargeRef.current) {
+        (chargeRef.current.material as THREE.MeshBasicMaterial).opacity = 0;
+      }
+      if (dotRef.current) {
+        (dotRef.current.material as THREE.MeshBasicMaterial).opacity = 0.7;
+      }
+      return;
     }
 
     // Nearest lead + pointer stillness → dwelling.
