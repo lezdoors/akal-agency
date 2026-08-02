@@ -17,19 +17,17 @@ interface FilmDirectorProps {
  * The visitor enters a world assembling itself: the field densifies from a
  * haze into the full globe (the boot), the camera holds a gentle BREATHE that
  * settles into an extended STILL as the headline completes, and one faint arc
- * traces as a promise. Reverse scroll rewinds the boot, proving the world is
- * procedural. This scene only *shows* the system; it asks nothing of the
- * visitor yet (interaction is gated to a handhold elsewhere).
+ * traces as a promise. The boot tracks scroll bidirectionally — reverse scroll
+ * rewinds it (the world un-unassembles), release reassembles it — so it proves
+ * the world is procedural, never a rendered still.
  *
- * Under reduced motion, the world resolves to its final, static state — the
- * story is preserved as a still, never a skipped beat.
+ * Under reduced motion, the world resolves to its final, static state.
  */
 export function FilmDirector({ time }: FilmDirectorProps) {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const director = useMemo(() => new CameraDirector(camera), [camera]);
 
   const boot = useRef(reducedMotion ? 1 : 0);
-  const done = useRef(reducedMotion);
   const lastProgress = useRef(time.progress);
 
   useEffect(() => {
@@ -40,6 +38,7 @@ export function FilmDirector({ time }: FilmDirectorProps) {
       breathe: reducedMotion ? 0 : 0.35,
     });
     worldState.boot = reducedMotion ? 1 : 0;
+    boot.current = reducedMotion ? 1 : 0;
   }, [director]);
 
   useFrame((_s, rawDt) => {
@@ -56,10 +55,8 @@ export function FilmDirector({ time }: FilmDirectorProps) {
     lastProgress.current = time.progress;
     const rewinding = pd < -0.0005;
 
-    if (rewinding || !done.current) {
-      boot.current = clamp01(boot.current + dt * (rewinding ? -1.3 : 0.45));
-      if (boot.current >= 1) done.current = true;
-    }
+    boot.current = clamp01(boot.current + dt * (rewinding ? -1.3 : 0.45));
+    if (boot.current >= 1) boot.current = 1; // hold at full
     worldState.boot = boot.current;
 
     // BREATHE while booting; settle to STILL as the world completes.
